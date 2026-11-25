@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>استيراد المنتجات</title>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<style>
+:root{--bg:#f1f5ef;--card:#fff;--ink:#10372b;--mut:#6b8076;--line:#dce7df;--g:#0d6b4d;--red:#d63a2b;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--bg:#0b1612;--card:#13231d;--ink:#e8f2ea;--mut:#8aa396;--line:#21372d;--g:#25c58b;--red:#ff7b6b;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,sans-serif;padding:12px;font-size:14px}
+.w{max-width:560px;margin:0 auto}
+h1{font-size:18px;margin:4px 0 10px}
+input,textarea{width:100%;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:8px}
+textarea{height:220px;direction:rtl;line-height:1.5}
+button{font:inherit;border:0;border-radius:10px;padding:10px 14px;background:var(--g);color:#fff;font-weight:700;width:100%;margin-bottom:8px}
+button:disabled{opacity:.5}
+.m{color:var(--mut);font-size:12px;margin:2px 0 8px}
+.e{color:var(--red);font-size:13px}
+.r{display:flex;justify-content:space-between;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 10px;margin-bottom:5px}
+.r small{color:var(--mut);display:block}
+.r.d{opacity:.45}
+</style>
+</head>
+<body>
+<div class="w">
+<h1>استيراد المنتجات (اسم + سعر قطاعي)</h1>
+
+<div id="lg">
+<p class="m">سجّل دخول بحساب المالك</p>
+<input id="u" placeholder="اسم المستخدم" dir="ltr" autocapitalize="none" value="owner">
+<input id="p" type="password" placeholder="الباسورد" dir="ltr">
+<button onclick="login()">دخول</button>
+<div class="e" id="le"></div>
+</div>
+
+<div id="mn" hidden>
+<p class="m">كل سطر: اسم المنتج | السعر — تقدر تعدّل أو تمسح أو تضيف أسطر. المنتج اللي اسمه موجود قبل كده بيتخطى.</p>
+<textarea id="t"></textarea>
+<button onclick="prev()">معاينة</button>
+<div class="m" id="ct"></div>
+<div id="pv"></div>
+<button id="sv" onclick="save()" hidden>حفظ الكل</button>
+<div class="m" id="st"></div>
+</div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const firebaseConfig={apiKey:"AIzaSyBWuHFFOMsMhwJ6vTsENy2qerKFSi51q5Y",authDomain:"sheikh-ayman-market.firebaseapp.com",projectId:"sheikh-ayman-market",storageBucket:"sheikh-ayman-market.firebasestorage.app",messagingSenderId:"473115297220",appId:"1:473115297220:web:dc0e733007cc8adb4e5091"};
+const DOM='sheikh-ayman-market.app';
+firebase.initializeApp(firebaseConfig);
+const auth=firebase.auth(),db=firebase.firestore();
+let C=[],EX=new Set(),R=[],uid='';
+const DATA=`ابز سيبوني|27
+اسباجتي سابه|30
+استيرو بلاستك 250 ملي|12
+استيرو بلاستك 350 ملي|16
+استيرو زجاج 250 ملي|15
+بارتيكو|5
+بامبرز رقم 3|175
+بامبرز رقم 4|175
+بامبرز رقم 5|185
+باليه حلال|85
+بيركه|200
+بصل بودر|200
+بلطي|90
+بن ال البيت ساده 250 جم|65
+بن ال البيت محوج 250 جم|65
+بن النجار ساده 40 جم|30
+بن عبد المعبود محوج 40 جم|45
+بن عبد المعبود ساده 40 جم|45
+بيرسول|50
+بيرين فلتر|135
+بيض|125
+بيكنج بودر|3
+بيكنج بودر تاج الملوك|5
+ثوم بودر|200
+تونه دولفين|45
+جبنه نصيبره|6
+جبنه ذهب 1/4ك|16
+جبنه روبس 1/4ك|15
+جبنه عبور لتند 1/4ك|28
+جبنه عبور لتند 1/8|15
+جبنه روبس 1/4ك جميع الأطعم|30
+حبهان|2000
+حجارة ريموت قلم|6
+حجارة ريموت كبيرة|6
+حمص|60
+خلطة حواوشي|200
+خلطة فراخ مشوية|200
+خلطة سمك|200
+خميرة فورية|5
+دايت شيكولاته|5
+رايب|18
+زبده|18
+زبادي عادي كهفه|5
+زبادي قطع|15
+زجاجه بيرال اوكسي|45
+زيت الأصيل 5 لتر|185
+زيت الأصيل لتر|185
+زيت الأصيل لتر (2)|0
+زيت الممتاز لتر|105
+زيت سور 500 ملي|65
+زيت شطارة لتر|95
+زيت صبي كلتر|200
+زيت صبي 2 لتر|250
+زيت صبي 5 لتر|425
+زيت صبي كلتر (2)|425
+زيت صولو لتر|85
+زيت صولو كلتر|420
+زيت صولو زرّه 700 ملي|0
+زيت عافيه زرّه كلتر|330
+زيت عافيه عباد لتر|270
+ساقع لتر|25
+ساقع 250 ملي|12
+ساقع سفن/بيبسي|10
+سبع بهارات|400
+سردين|40
+سكر|27
+سمك أبيض|125
+سمك أزرق|130
+سمن أميره|0
+سمن قوت|185
+سمن قوت 2ك|165
+شاي 1/4ك|53
+شاي 40 جرام|10
+شطه حمراء|150
+شوبس 2 لتر|45
+شيح|120
+صابونه سافانا|16
+طحينه 1 كيلو|120
+عدس|60
+عدس يجبه|60
+عرض بيف وفول|70
+عسل أبيض 1/2|35
+عسل أبيض 1 كيلو|65
+عسل أسود 2 كيلو|125
+عصير جهينه 200 ملي|5
+عصير جهينه 350 ملي|10
+عصير مانجا زجاج|10
+فاصوليا|80
+فانيليا|2
+فحم|30
+فلفل أسمر|500
+فيروز 1.5 لتر|40
+فيبوز|20
+كلشب زجاج|30
+كافي ميكس|7
+كركم|200
+كزبره|120
+كلور|25
+كمون|350
+كنز برايل|18
+كنز راني|20
+كيك شيف|6
+لبان سمارة|50
+لبن اكيلو|25
+لمبه حمراء 100 وات|20
+لمبه ليد 12 وات|35
+لمبه ليد 9 وات|30
+لمبه بيضه 9 وات|15
+لمبه حمراء 200 وات|35
+مارشميلو|10
+مربى فراولة لتين|25
+مرقه دجاج|45
+مكرونه|25
+مكرونه مصبا|13
+مكونات مصبا|13
+مناديل سحب|30
+منديل جيب|2.5
+بنسون منتله|5`;
+$('#t').value=DATA;
+
+const nz=t=>String(t||'').toLowerCase().replace(/[\u064B-\u0652\u0640]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي');
+const KW=[['مجمدات','مجمد|ايس كريم|ايسكريم|فريزر|ناجتس'],['مستلزمات أطفال','بامبرز|حفاض|سيريلاك|اطفال|بيبي'],['مياه','مياه|ميه|نستله|دساني|حياه|بيور|اكوافينا'],['بيض','بيض'],['شاي وقهوة','شاي|قهوه|نسكافيه|نسكافي|ليبتون|العروسه|كابتشينو|كاكاو|بن |كافي ميكس|بنسون'],['زيوت وسمن','زيت|سمن|زيتون'],['ألبان وأجبان','لبن|جبن|زبادي|قشطه|قشده|زبده|كريمه|رومي|فيتا|شيدر|موزاريلا|لبنه|رايب'],['لحوم ودواجن','لحم|فراخ|دجاج|كبده|بانيه|كفته|سجق|برجر|لانشون|بسطرمه|ستيك|مفروم|صدور'],['أسماك','سمك|جمبري|بلطي|بوري|سردين|ماكريل|كالماري'],['مخبوزات','عيش|خبز|توست|كرواسون|فينو|فطير|بقسماط'],['مشروبات غازية','ساقع|بيبسي|سفن|كولا|ميرندا|شوبس|شويبس|فانتا|سبرايت'],['مشروبات وعصائر','عصير|مشروب|ريد بول|مالت|نكتار'],['حلويات وسناكس','شيبسي|شيبس|شيكولاته|شوكولاته|بسكويت|ويفر|كيك|لب ابيض|مكسرات|جيلي|علكه|سناكس|بونبون|سوداني|فشار|حلاوه|حلويات|تسالي|مارشميلو|لبان|كنز'],['بهارات وتوابل','بهارات|كمون|فلفل|كزبره|قرفه|توابل|شطه|كاري|زنجبيل|خل |ملح|بودر|حبهان|كركم|خلطه|فانيليا|مرقه|بيكنج|خميره|مكونات'],['معلبات','معلب|تونه|صلصه|مربي|طحينه|مخلل|صوص|كاتشب|مايونيز|كلشب|فول'],['خضروات وفاكهة','طماطم|بطاطس|بصل|خيار|جزر|خس|ليمون|موز|تفاح|برتقال|عنب|مانجو|فراوله|خضار|فاكهه|ثوم|باذنجان|كوسه|بطيخ|جوافه'],['عناية شخصية','شامبو|معجون|فرشه|مزيل|ديودرانت|مناديل|فوط|رغوه|عطر|بلسم|حلاقه'],['منظفات','صابون|مسحوق|اريال|تايد|كلوركس|كلور|منظف|سائل جلي|فيري|معطر|ديتول|مطهر|ملمع|برسيل|مبيض|بيرال|اوكسي|بيرسول|بيرين'],['أدوات منزلية','اسفنج|اكياس|فويل|اطباق|اكواب|مكنسه|ممسحه|ولاعه|بطاريه|لمبه|حجاره|ريموت|فحم|استيرو'],['بقالة وسلع جافة','سكر|دقيق|مكرونه|سميد|نشا|شعريه|عسل'],['حبوب','ارز|عدس|حمص|لوبيا|فاصوليا|قمح|فريك|شوفان|ذره']];
+function guess(n){const t=nz(n)+' ';for(const[k,w]of KW){if(w.split('|').some(x=>t.includes(nz(x)))){const c=C.find(c=>c.name===k);return c?c:null}}return null}
+const dg=s=>s.replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+
+async function login(){
+ $('#le').textContent='';
+ try{await auth.signInWithEmailAndPassword($('#u').value.trim().toLowerCase()+'@'+DOM,$('#p').value)}
+ catch(e){$('#le').textContent='اليوزر أو الباسورد غلط'}
+}
+auth.onAuthStateChanged(async us=>{
+ if(!us)return;
+ uid='u:'+us.email.split('@')[0];
+ try{
+  const [c,p]=await Promise.all([db.collection('categories').get(),db.collection('products').get()]);
+  C=c.docs.map(d=>({id:d.id,...d.data()}));
+  EX=new Set(p.docs.map(d=>nz(d.data().name).trim()));
+  $('#lg').hidden=true;$('#mn').hidden=false;
+  if(!C.length)$('#ct').innerHTML='<span class="e">مفيش أقسام لسه — ادخل الموقع الرئيسي بحساب المالك مرة الأول وارجع.</span>';
+ }catch(e){$('#lg').hidden=false;$('#le').textContent='مشكلة في الاتصال أو الصلاحية'}
+});
+
+function prev(){
+ const seen=new Set();R=[];
+ $('#t').value.split('\n').forEach(l=>{
+  const i=l.lastIndexOf('|');if(i<1)return;
+  const name=l.slice(0,i).trim(),price=parseFloat(dg(l.slice(i+1)).replace(',','.'));
+  if(!name||isNaN(price))return;
+  const k=nz(name).trim(),dup=EX.has(k)||seen.has(k);seen.add(k);
+  R.push({name,price,cat:guess(name),dup});
+ });
+ const n=R.filter(r=>!r.dup).length,nc=R.filter(r=>!r.dup&&!r.cat).length;
+ $('#ct').textContent=`${n} منتج جديد · ${R.length-n} متخطى (موجود/مكرر) · ${nc} من غير قسم`;
+ $('#pv').innerHTML=R.map(r=>`<div class="r ${r.dup?'d':''}"><div>${r.name.replace(/</g,'&lt;')}<small>${r.dup?'متخطى':r.cat?(r.cat.emoji||'')+' '+r.cat.name:'بدون قسم'}</small></div><b>${r.price}</b></div>`).join('');
+ $('#sv').hidden=!n;$('#sv').textContent='حفظ الكل ('+n+')';
+}
+async function save(){
+ const L=R.filter(r=>!r.dup);if(!L.length)return;
+ $('#sv').disabled=true;$('#st').textContent='جاري الحفظ…';
+ try{
+  const at=Date.now();
+  for(let i=0;i<L.length;i+=400){
+   const b=db.batch();
+   L.slice(i,i+400).forEach(r=>b.set(db.collection('products').doc(),{name:r.name,cat:r.cat?r.cat.id:'',unit:'قطعة',retail:r.price,carton:0,per:'',buy:0,by:uid,at}));
+   await b.commit();
+  }
+  L.forEach(r=>EX.add(nz(r.name).trim()));
+  $('#st').textContent='اتحفظ '+L.length+' منتج ✅ افتح الموقع وراجعهم.';
+  R=[];$('#pv').innerHTML='';$('#sv').hidden=true;
+ }catch(e){$('#st').innerHTML='<span class="e">فشل الحفظ — اتأكد إنك دخلت بحساب المالك.</span>'}
+ $('#sv').disabled=false;
+}
+</script>
+</body>
+</html>

@@ -29,7 +29,7 @@ input:focus{border-color:var(--g2)}
 .live{font-size:9px;color:#cdeee0}.live:before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:#8bc212;margin-inline-end:4px}
 .hb{margin-inline-start:auto;display:flex;gap:6px}
 .ic{width:30px;height:30px;border-radius:10px;background:rgba(255,255,255,.2);color:#fff;font-size:15px;display:grid;place-items:center}
-.ic.add{background:#fff;color:var(--g1);font-weight:800;font-size:19px}
+.ic.add{background:#fff;color:var(--g1);font-weight:800;font-size:12px;width:auto;padding:0 10px;white-space:nowrap}.hd>div:nth-child(2){min-width:0}.hd h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 h2.t{background:linear-gradient(90deg,var(--g2),#e08a1e);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-size:18px;font-weight:800;margin:10px 0 0}
 .sub{color:var(--mut);font-size:11px;margin:0 0 6px}
 .stk{position:sticky;top:0;z-index:3;background:var(--bg);padding:4px 0 2px}
@@ -102,7 +102,7 @@ label{display:block;color:var(--mut);font-weight:600;margin:10px 0 4px;font-size
 </head>
 <body>
 <div class="w">
- <div class="hd"><div class="logo">🏷️</div><div><h1>سوبر ماركت الشيخ ايمن</h1><div class="live" id="lv">مباشر</div></div><div class="hb"><button class="ic add" onclick="edit('')" aria-label="منتج جديد">＋</button><button class="ic" onclick="team()" aria-label="الإعدادات">⚙️</button></div></div>
+ <div class="hd"><div class="logo">🏷️</div><div><h1>سوبر ماركت الشيخ ايمن</h1><div class="live" id="lv">مباشر</div></div><div class="hb"><button class="ic add" onclick="edit('')">＋ إضافة منتج جديد</button><button class="ic" onclick="team()" aria-label="الإعدادات">⚙️</button></div></div>
  <div id="vp">
   <h2 class="t">المنتجات</h2>
   <p class="sub" id="cnt"></p>
@@ -285,6 +285,7 @@ let armed=0;
 history.replaceState({r:1},'');history.pushState({a:1},'');
 addEventListener('popstate',()=>{
  if($('#ov').classList.contains('on')){cs();history.pushState({a:1},'');return}
+ if(tab!=='p'){tb('p');history.pushState({a:1},'');return}
  if(armed){armed=0;history.back();return}
  armed=1;toast('اضغط رجوع مرة تانية للخروج',2000);setTimeout(()=>armed=0,2000);history.pushState({a:1},'')
 });
@@ -304,20 +305,16 @@ document.addEventListener('DOMContentLoaded',()=>{
   window.DOM='sheikh-ayman-market.app';window.OWNER='owner@'+DOM;
   firebase.initializeApp(firebaseConfig);window.auth=firebase.auth();db=firebase.firestore();
   db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
-  auth.onAuthStateChanged(async us=>{
+  auth.onAuthStateChanged(us=>{
    if(!us){$('#gate').classList.add('on');return}
-   const u=us.email.split('@')[0];owner=us.email===OWNER;
-   try{
-    let g=await db.doc('accounts/'+u).get();
+   const u=us.email.split('@')[0];owner=us.email===OWNER;me='u:'+u;
+   $('#gate').classList.remove('on');start();rl();
+   db.doc('accounts/'+u).get().then(async g=>{
     if(!g.exists&&owner){await db.doc('accounts/'+u).set({name:'المالك',at:Date.now()});g=await db.doc('accounts/'+u).get()}
     if(!g.exists)throw{code:'permission-denied'};
-    me='u:'+u;names[me]=g.data().name;
-    if(owner)await seed();
-    $('#gate').classList.remove('on');start();rl()
-   }catch(e){
-    if(e&&e.code==='permission-denied'){await auth.signOut();$('#ge').textContent='الحساب ده اتوقف أو مالوش صلاحية'}else $('#ge').textContent='مشكلة في الاتصال — جرّب تاني';
-    $('#gate').classList.add('on')
-   }
+    names[me]=g.data().name;$('#lv').textContent='مباشر · '+(owner?'المالك':names[me]);rp();rl();rch();svc();
+    if(owner)seed()
+   }).catch(async e=>{if(e&&e.code==='permission-denied'){await auth.signOut();$('#ge').textContent='الحساب ده اتوقف أو مالوش صلاحية';$('#gate').classList.add('on')}});
   });
  }catch(e){$('#lv').textContent='بدون اتصال'}
 });

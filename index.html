@@ -42,7 +42,7 @@ h2.t{background:linear-gradient(90deg,var(--g2),#e08a1e);-webkit-background-clip
 .ch.on{background:var(--btn);color:var(--btnt);border-color:transparent}
 .ch[style]{border:1.5px solid var(--ac);color:var(--ink)}.ch[style].on{background:var(--ac);color:#fff}
 #pl{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:8px}
-.card{padding:12px 11px 10px;border-radius:14px;border:1px solid var(--line);background:linear-gradient(var(--ac),var(--ac)) top/100% 3px no-repeat,linear-gradient(160deg,var(--card),var(--bg2));box-shadow:0 2px 8px rgba(0,0,0,.07);display:flex;flex-direction:column;gap:4px;min-width:0;overflow:hidden;cursor:pointer}
+.card{touch-action:manipulation;padding:12px 11px 10px;border-radius:14px;border:1px solid var(--line);background:linear-gradient(var(--ac),var(--ac)) top/100% 3px no-repeat,linear-gradient(160deg,var(--card),var(--bg2));box-shadow:0 2px 8px rgba(0,0,0,.07);display:flex;flex-direction:column;gap:4px;min-width:0;overflow:hidden;cursor:pointer}
 .tg{align-self:flex-start;font-size:10px;padding:1px 8px;border-radius:999px;background:color-mix(in srgb,var(--ac) 16%,transparent);color:var(--ac);font-weight:700;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .card h3{font-size:15px;margin:0;font-weight:800;line-height:1.35}
 .pw{display:inline-block;font-size:11px;font-weight:700;padding:0 6px;border-radius:6px;margin-inline-start:6px;background:rgba(194,122,14,.16);color:var(--gold);vertical-align:middle;unicode-bidi:isolate;white-space:nowrap}
@@ -140,7 +140,7 @@ label{display:block;color:var(--mut);font-weight:600;margin:10px 0 4px;font-size
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const UN=['قطعة','كيلو','علبة','لتر','باكيت','دستة','شنطة'],FL={retail:'قطاعي',carton:'جملة',buy:'شراء'},OR=['retail','carton','buy'];
+const UN=['قطعة','كيلو','علبة','لتر','باكيت','دستة','شنطة','زجاجة'],FL={retail:'قطاعي',carton:'جملة',buy:'شراء'},OR=['retail','carton','buy'];
 const fm=n=>(+n||0).toLocaleString('en',{maximumFractionDigits:2});
 const nd=s=>String(s==null?'':s).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/٫/g,'.').trim();
 const pwt=p=>{const t=nd(p.per);if(!t)return'';return/^[\d.,]+$/.test(t)?t+' '+(p.unit||''):String(p.per).trim()};
@@ -188,6 +188,9 @@ function sq(v){q=v;clearTimeout(qt);qt=setTimeout(()=>{rp();sst()},120)}
 function pc(k){cat=k;rp();sst()}
 /* ---- المنتجات ---- */
 function ar(pid,f){const x=L.find(z=>z.pid===pid&&z.f===f);if(!x||!x.from||x.from===x.to)return'';const up=x.to>x.from;return`<i class="ar ${up?'up':'dn'}">${up?'▲ رفع ':'▼ نزل '}${fm(Math.abs(x.to-x.from))}</i>`}
+/* ضغطتين ورا بعض على المنتج عشان يفتح التعديل */
+let lastT=0,lastId='';
+function tp(id){const n=Date.now();if(lastId===id&&n-lastT<350){lastT=0;lastId='';edit(id)}else{lastId=id;lastT=n}}
 function rp(){
  if(cat!=='all'&&C.length&&!C.some(c=>c.id===cat))cat='all';
  const ps=P.filter(p=>(cat==='all'||p.cat===cat)&&(!q||nz(p.name).includes(nz(q.trim()))));
@@ -197,7 +200,7 @@ function rp(){
  cc.innerHTML=[['all','الكل',''],...C.map(c=>[c.id,(c.emoji||'🏷️')+' '+c.name,col(c.id)])].map(([k,v,c])=>`<button class="ch ${cat===k?'on':''}" ${c?`style="--ac:${c}"`:''} onclick="pc('${esc(k)}')">${esc(v)}</button>`).join('');
  cc.scrollLeft=sl;
  nm(ps.map(p=>p.by));
- $('#pl').innerHTML=ps.length?ps.map(p=>`<div class="card" style="--ac:${col(p.cat)}" onclick="edit('${esc(p.id)}')"><span class="tg">${esc(cn(p.cat))}</span><h3>${esc(p.name)}${pwt(p)?`<span class="pw">${esc(pwt(p))}</span>`:''}</h3><div class="pr"><span class="lb">قطاعي</span><b>${fm(p.retail)}</b><small>ج.م</small>${ar(p.id,'retail')}</div>${p.carton||p.buy?`<div class="sm">${p.carton?`<span>جملة <b class="gd">${fm(p.carton)}</b>${ar(p.id,'carton')}</span>`:''}${p.buy?`<span>شراء <b class="pl">${fm(p.buy)}</b>${ar(p.id,'buy')}</span>`:''}</div>`:''}<div class="ft"><span>${p.by?esc(who(p.by)):''}</span><span>${p.at?ago(p.at):''}</span></div></div>`).join(''):`<div class="empty">${P.length?'مفيش نتايج':'مفيش منتجات لسه — اضغط ＋ فوق'}</div>`;
+ $('#pl').innerHTML=ps.length?ps.map(p=>`<div class="card" style="--ac:${col(p.cat)}" onclick="tp('${esc(p.id)}')"><span class="tg">${esc(cn(p.cat))}</span><h3>${esc(p.name)}${pwt(p)?`<span class="pw">${esc(pwt(p))}</span>`:''}</h3><div class="pr"><span class="lb">قطاعي</span><b>${fm(p.retail)}</b><small>ج.م</small>${ar(p.id,'retail')}</div>${p.carton||p.buy?`<div class="sm">${p.carton?`<span>جملة <b class="gd">${fm(p.carton)}</b>${ar(p.id,'carton')}</span>`:''}${p.buy?`<span>شراء <b class="pl">${fm(p.buy)}</b>${ar(p.id,'buy')}</span>`:''}</div>`:''}<div class="ft"><span>${p.by?esc(who(p.by)):''}</span><span>${p.at?ago(p.at):''}</span></div></div>`).join(''):`<div class="empty">${P.length?'مفيش نتايج':'مفيش منتجات لسه — اضغط ＋ فوق'}</div>`;
 }
 /* ---- سجل التعديلات (كل تعديل منتج في بطاقة واحدة) ---- */
 function rl(){
@@ -243,7 +246,7 @@ function edit(id){
  if(!canW)return toast('الصلاحية للعرض فقط');
  const p=id?P.find(x=>x.id===id):{unit:'قطعة',cat:''};if(!p)return;
  sel={id,unit:p.unit||'قطعة',cat:p.cat||'',manual:!!p.cat};edId=id||'';
- let perv=p.per||'';const mm=String(perv).match(/^\s*([\d.,٠-٩]+)\s*(قطعة|كيلو|علبة|لتر|باكيت|دستة|شنطة)\s*$/);if(mm){perv=mm[1];sel.unit=mm[2]}
+ let perv=p.per||'';const mm=String(perv).match(/^\s*([\d.,٠-٩]+)\s*(قطعة|كيلو|علبة|لتر|باكيت|دستة|شنطة|زجاجة)\s*$/);if(mm){perv=mm[1];sel.unit=mm[2]}
  const hs=L.filter(x=>x.pid===id).slice(0,8);nm(hs.map(x=>x.by));
  op(hd(id?'تعديل المنتج':'منتج جديد','')+`<div class="pbd"><label>اسم المنتج</label><input id="fn" value="${esc(p.name)}" oninput="ag()">
  <div class="box"><div class="g3"><div><div class="lr"><span class="pill">قطاعي</span></div><input id="fr" class="num" inputmode="decimal" placeholder="0" value="${p.retail||''}"></div><div><div class="lr"><span class="pill g">جملة اللفة</span></div><input id="fc" class="num" inputmode="decimal" placeholder="0" value="${p.carton||''}"></div><div><div class="lr"><span class="pill p">شاري بيه</span></div><input id="fb" class="num" inputmode="decimal" placeholder="0" value="${p.buy||''}"></div></div><label>اللفة فيها</label><input id="fp" inputmode="decimal" placeholder="مثال: 25" value="${esc(perv)}" oninput="pv()"><label>وحدة اللفة (اضغط على الوحدة)</label><div class="wrap">${UN.map(u=>`<button class="ch uu ${u===sel.unit?'on':''}" onclick="sel.unit='${u}';sw(this,'uu');pv()">${u}</button>`).join('')}</div><small class="hint" id="pv"></small></div>

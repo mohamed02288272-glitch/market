@@ -1,4 +1,4 @@
-/* fast.js v2 — يشيل شاشة اللوجو التانية، يسرّع الرسم، ويحدّث الصفحة لما ترفع نسخة جديدة */
+/* fast.js v3 — يشيل شاشة اللوجو التانية، يسرّع الرسم، ويحدّث الصفحة لما ترفع نسخة جديدة */
 (function(){
  var s=document.createElement('style');
  s.textContent='#sp0{display:none!important}';
@@ -10,6 +10,20 @@
   window.rp=function(){
    if(t)return;
    t=requestAnimationFrame(function(){t=0;o()});
+  };
+ });
+
+ /* زر "الكل": يمسح اللي مكتوب في البحث ويعرض كل المنتجات */
+ document.addEventListener('DOMContentLoaded',function(){
+  var p=window.pc;
+  if(typeof p!=='function')return;
+  window.pc=function(k){
+   if(k==='all'){
+    q='';
+    var i=document.getElementById('q');
+    if(i)i.value='';
+   }
+   p(k);
   };
  });
 

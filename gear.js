@@ -90,4 +90,95 @@ window.rp=function(){
  if(owner&&!purged&&all.length){purged=1;all.filter(p=>p.del&&Date.now()-(p.delAt||0)>2592e6).forEach(p=>db.doc('products/'+p.id).delete().catch(()=>{}))}
 };
 rp();
+
+/* ===== الدفعة 2+3: صوت (بحث وأوامر) + شات صور وتسجيل صوتي + "شافه/شافها" ===== */
+const css2=document.createElement('style');
+css2.textContent=`.vs{position:absolute;inset-inline-end:8px;top:8px;width:34px;height:34px;border-radius:50%;background:var(--bg2);font-size:16px}
+.stk input#q{padding-inline-end:46px}
+.rec{background:var(--red)!important;color:#fff!important}
+.cb{width:42px;height:42px;border-radius:12px;background:var(--card);border:1px solid var(--line);flex:none;font-size:17px;padding:0}
+.mi{display:block;max-width:100%;max-height:220px;border-radius:10px;margin-top:4px}
+.ma{display:block;width:100%;max-width:230px;height:36px;margin-top:4px}
+.rc{font-size:10px;opacity:.95;margin-top:2px}.rc b{color:#9ae6ff}`;
+document.head.appendChild(css2);
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+function listen(cb,btn){
+ if(!SR)return toast('المتصفح ده مش بيدعم الأوامر الصوتية');
+ const r=new SR();r.lang='ar-EG';r.interimResults=false;r.maxAlternatives=1;
+ if(btn)btn.classList.add('rec');
+ r.onresult=e=>cb(e.results[0][0].transcript);
+ r.onerror=e=>toast(e.error==='not-allowed'?'اسمح للميكروفون من إعدادات المتصفح':'مسمعتش، جرّب تاني');
+ r.onend=()=>{if(btn)btn.classList.remove('rec')};
+ try{r.start()}catch(x){}
+}
+/* بحث صوتي */
+const qi=document.getElementById('q');
+if(qi){const vb=document.createElement('button');vb.className='vs';vb.textContent='🎤';vb.onclick=()=>listen(t=>{qi.value=t;sq(t)},vb);qi.parentNode.appendChild(vb)}
+/* أوامر صوتية */
+window.gCmd=function(t){
+ const s=nz(t).trim(),has=(...w)=>w.some(x=>s.includes(nz(x)));let m;
+ if(m=s.match(/(?:دور علي|دورلي علي|ابحث عن|بحث عن|دور)\s+(.+)/)){tb('p');if(qi)qi.value=m[1];sq(m[1]);return toast('🔍 '+m[1],2000)}
+ if(m=s.match(/قسم\s+(.+)/)){const c=C.find(c=>nz(c.name).includes(m[1].trim()));if(c){tb('p');pc(c.id);return toast(c.name,2000)}}
+ if(has('ضيف منتج','منتج جديد','اضافه منتج','اضافه منتج جديد'))return edit('');
+ if(has('سله','محذوفات'))return gTrash();
+ if(has('مكرر'))return gDup();
+ if(has('شات','رسايل','رسائل'))return tb('c');
+ if(has('تعديلات','سجل'))return tb('l');
+ if(has('اعدادات','الترس'))return team();
+ if(has('ليل','دارك')){s_('sam_th','dark');aT();return toast('🌙',1500)}
+ if(has('نهار','فاتح')){s_('sam_th','light');aT();return toast('☀️',1500)}
+ if(has('كبر','خط كبير')){s_('sam_fs','1.25');aF();return toast('الخط كبير',1500)}
+ if(has('خط عادي','صغر')){s_('sam_fs','1');aF();return toast('الخط عادي',1500)}
+ if(has('منتجات','رئيسيه','الرئيسيه'))return tb('p');
+ if(has('اقفل','ارجع','اغلق'))return cs();
+ toast('مفهمتش: '+t,3000);
+};
+const hb=document.querySelector('.hb');
+if(hb){const b=document.createElement('button');b.className='ic';b.id='vcmd';b.textContent='🎙️';b.setAttribute('aria-label','أوامر صوتية');b.onclick=()=>{toast('قول الأمر… (مثال: ضيف منتج / الشات / ليل / قسم ألبان / دور على جبنة)',3500);listen(gCmd,b)};hb.insertBefore(b,hb.firstChild)}
+/* شات: صور وتسجيل صوتي */
+const send2=d=>{if(db)db.collection('chat').add({...d,by:me,at:Date.now()}).catch(()=>toast('مفيش صلاحية للكتابة'))};
+const cr=document.querySelector('#vc .cr');
+if(cr){
+ const f=document.createElement('input');f.type='file';f.accept='image/*';f.hidden=true;cr.appendChild(f);
+ const ib=document.createElement('button');ib.className='cb';ib.textContent='📷';ib.onclick=()=>f.click();
+ const mb=document.createElement('button');mb.className='cb';mb.textContent='🎤';
+ cr.insertBefore(ib,cr.querySelector('.pb'));cr.insertBefore(mb,cr.querySelector('.pb'));
+ f.onchange=()=>{const file=f.files[0];f.value='';if(!file)return;const u=URL.createObjectURL(file),im=new Image();
+  im.onload=()=>{const k=Math.min(1,720/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+   let q=.6,d=c.toDataURL('image/jpeg',q);while(d.length>700000&&q>.3){q-=.1;d=c.toDataURL('image/jpeg',q)}
+   URL.revokeObjectURL(u);if(d.length>900000)return toast('الصورة كبيرة');send2({t:'📷 صورة',img:d});toast('اتبعتت ✅',1500)};
+  im.onerror=()=>toast('الصورة مش مقروءة');im.src=u};
+ let rc=null,ti=0,sec=0;
+ mb.onclick=async()=>{
+  if(rc){rc.stop();return}
+  if(!navigator.mediaDevices||!window.MediaRecorder)return toast('المتصفح مش بيدعم تسجيل الصوت');
+  try{const st=await navigator.mediaDevices.getUserMedia({audio:true}),ch=[],mr=new MediaRecorder(st,{audioBitsPerSecond:16000});
+   rc=mr;sec=0;mr.ondataavailable=e=>{if(e.data.size)ch.push(e.data)};
+   mr.onstop=()=>{clearInterval(ti);st.getTracks().forEach(t=>t.stop());rc=null;mb.classList.remove('rec');mb.textContent='🎤';
+    if(sec<1)return;const fr=new FileReader();fr.onload=()=>{if(fr.result.length>900000)return toast('التسجيل طويل');send2({t:'🎤 رسالة صوتية',aud:fr.result,dur:sec});toast('اتبعتت ✅',1500)};fr.readAsDataURL(new Blob(ch,{type:mr.mimeType||'audio/webm'}))};
+   mr.start();mb.classList.add('rec');mb.textContent='⏹ 0';ti=setInterval(()=>{sec++;mb.textContent='⏹ '+sec;if(sec>=30)mr.stop()},1000);
+  }catch(e){toast('اسمح للميكروفون من إعدادات المتصفح')}};
+}
+/* منع تضخم الكاش المحلي بالصور والصوت */
+window.svc=function(){clearTimeout(ct);ct=setTimeout(()=>sv_('sam_ca',{P,C,L:L.slice(0,150),CH:CH.map(m=>m.img||m.aud?{...m,img:'',aud:''}:m),me,names:Object.fromEntries(Object.entries(names).filter(e=>e[1]))}),500)};
+/* شافه / شافها */
+let SN={},mt={},mq=0,sn0=0;
+function mark(k){if(!db||!/^u:/.test(me))return;mt[k]=Date.now();clearTimeout(mq);mq=setTimeout(()=>{const o=mt;mt={};db.doc('seen/'+me.slice(2)).set(o,{merge:true}).catch(()=>{if(!mark.w){mark.w=1;toast('علامة "شافه" محتاجة قاعدة seen في Firestore (هبعتلك الكود)',6000)}})},1500)}
+const nmz=(k,t)=>Object.entries(SN).filter(([u,v])=>'u:'+u!==me&&(v[k]||0)>=t).map(([u])=>who('u:'+u));
+function dec(){const c=document.getElementById('cm');if(!c)return;
+ [...c.children].forEach((n,i)=>{const m=CH[i];if(!m||!n.classList.contains('mg'))return;
+  if(m.img&&!n.querySelector('.mi')){const im=new Image();im.className='mi';im.src=m.img;im.onclick=()=>op(hd('صورة','')+`<div class="pbd"><img src="${m.img}" style="width:100%;border-radius:12px"></div>`);n.appendChild(im)}
+  if(m.aud&&!n.querySelector('audio')){const a=document.createElement('audio');a.controls=true;a.preload='metadata';a.src=m.aud;a.className='ma';n.appendChild(a)}
+  if(m.by===me){let r=n.querySelector('.rc');if(!r){r=document.createElement('div');r.className='rc';n.appendChild(r)}const rs=nmz('chat',m.at);r.innerHTML=rs.length?'<b>✓✓</b> شافها: '+esc(rs.join('، ')):'✓'}})}
+function decL(){const e=document.getElementById('ll');if(!e)return;const M=new Map();
+ L.forEach(x=>{const k=x.pid+'|'+x.at+'|'+x.by;if(!M.has(k))M.set(k,{by:x.by,at:x.at})});const G2=[...M.values()];
+ [...e.querySelectorAll('.lg')].forEach((n,i)=>{const g2=G2[i],m=n.querySelector('.m');if(!g2||g2.by!==me||!m)return;let r=m.querySelector('.sn');if(!r){r=document.createElement('small');r.className='sn';r.style.display='block';m.appendChild(r)}
+  const rs=nmz('log',g2.at);r.textContent=rs.length?'👁 شافوا التعديل: '+rs.join('، '):'لسه محدش شافه'})}
+const orch=window.rch;window.rch=function(){orch();dec();if(tab==='c')mark('chat')};
+const orl=window.rl;window.rl=function(){orl();decL();if(tab==='l')mark('log')};
+const otb=window.tb;window.tb=function(t,i){otb(t,i);if(t==='c')mark('chat');if(t==='l')mark('log')};
+const oqn=window.qn;window.qn=function(x){oqn(x);mark('log')};
+const ost=window.start;window.start=function(){ost();if(sn0||!db)return;sn0=1;
+ db.collection('seen').onSnapshot(s=>{SN={};s.docs.forEach(d=>SN[d.id]=d.data());nm(Object.keys(SN).map(u=>'u:'+u));dec();decL()},()=>{})};
+
 })();

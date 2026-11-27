@@ -94,7 +94,6 @@ rp();
 /* ===== الدفعة 2+3: صوت (بحث وأوامر) + شات صور وتسجيل صوتي + "شافه/شافها" ===== */
 const css2=document.createElement('style');
 css2.textContent=`.vs{position:absolute;inset-inline-end:8px;top:8px;width:34px;height:34px;border-radius:50%;background:var(--bg2);font-size:16px}
-.stk input#q{padding-inline-end:46px}
 .rec{background:var(--red)!important;color:#fff!important}
 .cb{width:42px;height:42px;border-radius:12px;background:var(--card);border:1px solid var(--line);flex:none;font-size:17px;padding:0}
 .mi{display:block;max-width:100%;max-height:220px;border-radius:10px;margin-top:4px}
@@ -111,9 +110,8 @@ function listen(cb,btn){
  r.onend=()=>{if(btn)btn.classList.remove('rec')};
  try{r.start()}catch(x){}
 }
-/* بحث صوتي */
+/* بحث صوتي (اتشال) */
 const qi=document.getElementById('q');
-if(qi){const vb=document.createElement('button');vb.className='vs';vb.textContent='🎤';vb.onclick=()=>listen(t=>{qi.value=t;sq(t)},vb);qi.parentNode.appendChild(vb)}
 /* أوامر صوتية */
 window.gCmd=function(t){
  const s=nz(t).trim(),has=(...w)=>w.some(x=>s.includes(nz(x)));let m;

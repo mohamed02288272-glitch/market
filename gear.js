@@ -98,7 +98,7 @@ css2.textContent=`.vs{position:absolute;inset-inline-end:8px;top:8px;width:34px;
 .rec{background:var(--red)!important;color:#fff!important}
 .cb{width:42px;height:42px;border-radius:12px;background:var(--card);border:1px solid var(--line);flex:none;font-size:17px;padding:0}
 .mi{display:block;max-width:100%;max-height:220px;border-radius:10px;margin-top:4px}
-.ma{display:block;width:100%;max-width:230px;height:36px;margin-top:4px}
+.ap{display:flex;align-items:center;gap:8px;margin-top:6px;min-width:200px}.apb{width:34px;height:34px;border-radius:50%;background:rgba(128,128,128,.3);color:inherit;flex:none;font-size:14px}.apt{flex:1;height:5px;border-radius:3px;background:rgba(128,128,128,.35);overflow:hidden}.apt i{display:block;height:100%;width:0;background:currentColor}.ap span{font-size:11px;min-width:30px}
 .rc{font-size:10px;opacity:.95;margin-top:2px}.rc b{color:#9ae6ff}`;
 document.head.appendChild(css2);
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -163,12 +163,15 @@ if(cr){
 window.svc=function(){clearTimeout(ct);ct=setTimeout(()=>sv_('sam_ca',{P,C,L:L.slice(0,150),CH:CH.map(m=>m.img||m.aud?{...m,img:'',aud:''}:m),me,names:Object.fromEntries(Object.entries(names).filter(e=>e[1]))}),500)};
 /* شافه / شافها */
 let SN={},mt={},mq=0,sn0=0;
-function mark(k){if(!db||!/^u:/.test(me))return;mt[k]=Date.now();clearTimeout(mq);mq=setTimeout(()=>{const o=mt;mt={};db.doc('seen/'+me.slice(2)).set(o,{merge:true}).catch(()=>{if(!mark.w){mark.w=1;toast('علامة "شافه" محتاجة قاعدة seen في Firestore (هبعتلك الكود)',6000)}})},1500)}
+function mark(k){if(!db||!/^u:/.test(me))return;mt[k]=Date.now();clearTimeout(mq);mq=setTimeout(()=>{const o=mt;mt={};db.doc('seen/'+me.slice(2)).set(o,{merge:true}).catch(()=>{if(!mark.w&&!g('sam_sw','')){mark.w=1;s_('sam_sw','1');toast('علامة "شافه" محتاجة قاعدة seen في Firestore (هبعتلك الكود)',6000)}})},1500)}
 const nmz=(k,t)=>Object.entries(SN).filter(([u,v])=>'u:'+u!==me&&(v[k]||0)>=t).map(([u])=>who('u:'+u));
 function dec(){const c=document.getElementById('cm');if(!c)return;
  [...c.children].forEach((n,i)=>{const m=CH[i];if(!m||!n.classList.contains('mg'))return;
   if(m.img&&!n.querySelector('.mi')){const im=new Image();im.className='mi';im.src=m.img;im.onclick=()=>op(hd('صورة','')+`<div class="pbd"><img src="${m.img}" style="width:100%;border-radius:12px"></div>`);n.appendChild(im)}
-  if(m.aud&&!n.querySelector('audio')){const a=document.createElement('audio');a.controls=true;a.preload='metadata';a.src=m.aud;a.className='ma';n.appendChild(a)}
+  if(m.aud&&!n.querySelector('.ap')){const d=m.dur||0,fmt=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0'),w=document.createElement('div');w.className='ap';w.innerHTML='<button class="apb">▶</button><div class="apt"><i></i></div><span>'+fmt(d)+'</span>';
+   let au=null;const b=w.querySelector('button'),bar=w.querySelector('i'),sp=w.querySelector('span');
+   b.onclick=e=>{e.stopPropagation();if(!au){au=new Audio(m.aud);au.ontimeupdate=()=>{bar.style.width=Math.min(100,au.currentTime/(d||au.currentTime||1)*100)+'%';sp.textContent=fmt(au.currentTime)};au.onended=()=>{b.textContent='▶';bar.style.width='0';sp.textContent=fmt(d)};au.onpause=()=>{b.textContent='▶'};au.onplay=()=>{b.textContent='⏸'}}
+    au.paused?au.play().catch(()=>toast('مقدرتش أشغل الصوت')):au.pause()};n.appendChild(w)}
   if(m.by===me){let r=n.querySelector('.rc');if(!r){r=document.createElement('div');r.className='rc';n.appendChild(r)}const rs=nmz('chat',m.at);r.innerHTML=rs.length?'<b>✓✓</b> شافها: '+esc(rs.join('، ')):'✓'}})}
 function decL(){const e=document.getElementById('ll');if(!e)return;const M=new Map();
  L.forEach(x=>{const k=x.pid+'|'+x.at+'|'+x.by;if(!M.has(k))M.set(k,{by:x.by,at:x.at})});const G2=[...M.values()];

@@ -1,13 +1,14 @@
-const V='sam-v7';
-const CORE=['./','index.html','manifest.json','icon-192.png','logo-full.jpg?v=2','fast.js?v=3','patch.js?v=5','patch2.js?v=1'];
+const V='sam-v8';
+const CORE=['./','index.html','manifest.json','icon-192.png','logo-full.jpg?v=2','fast.js?v=3','patch.js?v=5','patch2.js?v=1','gear.js?v=1'];
 const FB=['app','auth','firestore'].map(n=>'https://www.gstatic.com/firebasejs/10.14.1/firebase-'+n+'-compat.js');
 const H={'Content-Type':'text/html; charset=utf-8'};
-/* يضيف fast.js و patch.js و patch2.js تلقائيًا لصفحة index.html (لو مش مضافين) ويخفي شاشة اللوجو التانية */
+/* يضيف fast.js و patch.js و patch2.js و gear.js تلقائيًا لصفحة index.html (gear.js آخر واحد) ويخفي شاشة اللوجو التانية */
 function inj(t){
   let add='';
   if(t.indexOf('patch.js')<0)add+='<script src="patch.js?v=5"></script>';
   if(t.indexOf('patch2.js')<0)add+='<script src="patch2.js?v=1"></script>';
   if(t.indexOf('fast.js')<0)add+='<script src="fast.js?v=3"></script>';
+  if(t.indexOf('gear.js?v=1')<0){t=t.replace('<script src="gear.js"></script>','');add+='<script src="gear.js?v=1"></script>'}
   if(add)t=t.replace('</body>',add+'</body>');
   if(t.indexOf('#sp0{display:none')<0)t=t.replace('<head>','<head><style>#sp0{display:none!important}</style>');
   return t;
